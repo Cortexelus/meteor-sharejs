@@ -1,5 +1,3 @@
-# Set asset path in Ace config
-require('ace/config').set('basePath', '/packages/mizzao:sharejs/ace-builds/src')
 
 class ShareJSConnector
 
@@ -23,6 +21,7 @@ class ShareJSConnector
     @docIdVar = docIdVar
 
   create: ->
+    console.log "super create"
     throw new Error("Already created") if @isCreated
     connector = this
     @isCreated = true
@@ -81,107 +80,85 @@ class ShareJSConnector
     @view = null
     @isDestroyed = true
 
-class ShareJSAceConnector extends ShareJSConnector
-  constructor: (parentView) ->
-    super
-    params = Blaze.getData(parentView)
-    @configCallback = params.onRender || params.callback # back-compat
-    @connectCallback = params.onConnect
-
-  createView: ->
-    return Blaze.With(Blaze.getData, -> Template._sharejsAce)
-
-  rendered: (element) ->
-    super
-    @ace = ace.edit(element)
-    # Configure the editor if specified
-    @configCallback?(@ace)
-
-  connect: ->
-    @ace.setReadOnly(true); # Disable editing until share is connected
-    super
-
-  attach: (doc) ->
-    super
-    doc.attach_ace(@ace)
-    @ace.setReadOnly(false)
-    @connectCallback?(@ace)
-
-  disconnect: ->
-    # Detach ace editor, if any
-    @doc?.detach_ace?()
-    super
-
-  destroy: ->
-    super
-    # Meteor._debug "destroying Ace editor"
-    @ace?.destroy()
-    @ace = null
-
 class ShareJSCMConnector extends ShareJSConnector
   constructor: (parentView) ->
     super
+    console.log "constructor"
+    #return null if @dontConstructItAgain
     params = Blaze.getData(parentView)
     @configCallback = params.onRender || params.callback # back-compat
     @connectCallback = params.onConnect
 
   createView: ->
+    console.log "createView"
+    #return null if @dontConstructItAgain
     return Blaze.With(Blaze.getData, -> Template._sharejsCM)
 
   rendered: (element) ->
     super
-    @cm = CodeMirror.fromTextArea(element)
+    console.log "rendered"
+    @cm_original = element
+
+    @cm = CodeMirror(element)
     @configCallback?(@cm)
 
-  connect: ->
+  connect: -> 
+    console.log "connect" 
     @cm.readOnly = true
     super
 
   attach: (doc) ->
     super
+    console.log "attach" 
     doc.attach_cm(@cm)
     @cm.readOnly = false
+
+    #@dontConstructItAgain = true
     @connectCallback?(@cm)
 
   disconnect: ->
+    console.log "disconnect" 
     @cm?.detach_share?()
     super
 
   destroy: ->
     super
+    console.log "destroy"
     # Meteor._debug "destroying cm editor"
-    @cm?.toTextArea()
     @cm = null
+    @cm_original = null
 
 class ShareJSTextConnector extends ShareJSConnector
   createView: ->
+    console.log "textarea createView"
     return Blaze.With(Blaze.getData, -> Template._sharejsText)
 
   rendered: (element) ->
     super
+    console.log "textarea rendered"
     @textarea = element
 
   connect: ->
+    console.log "textarea connect"
     @textarea.disabled = true
     super
 
   attach: (doc) ->
     super
+    console.log "textarea attach"
     doc.attach_textarea(@textarea)
     @textarea.disabled = false
 
-  disconnect: ->
+  disconnect: -> 
+    console.log "textarea disconnect"
     @textarea?.detach_share?()
     super
 
   destroy: ->
     super
+    console.log "textarea destroy"
     # Meteor._debug "destroying textarea editor"
     @textarea = null
-
-UI.registerHelper "sharejsAce", new Template('sharejsAce', ->
-  return new ShareJSAceConnector(this).create()
-)
 
 UI.registerHelper "sharejsCM", new Template('sharejsCM', ->
   return new ShareJSCMConnector(this).create()

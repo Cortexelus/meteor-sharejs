@@ -47,8 +47,21 @@ function getFilesFromFolder(packageName, folder){
   }
   // save current working directory (something like "/home/user/projects/my-project")
   var cwd = process.cwd();
+
+
+  var isRunningFromApp = fs.existsSync(path.resolve("packages"));
+  var packagePath = "";
+  if (isRunningFromApp) {
+    packagePath = path.resolve("packages", packageName);
+  }
+
+  packagePath = path.resolve(packagePath);
+
+   // chdir to our package directory
+//  process.chdir(path.join("packages", packageName));
+  process.chdir(path.join(packagePath));
   // chdir to our package directory
-  process.chdir(path.join("packages", packageName));
+  //process.chdir(path.join("packages", packageName));
   // launch initial walk
   var result = walk(folder);
   // restore previous cwd
@@ -65,12 +78,14 @@ Package.onUse(function (api) {
   api.use(['handlebars', 'templating'], 'client');
   api.use(['mongo-livedata', 'routepolicy', 'webapp'], 'server');
 
+  
   // ShareJS script files
   api.addFiles([
       '.npm/package/node_modules/share/node_modules/browserchannel/dist/bcsocket.js',
       '.npm/package/node_modules/share/webclient/share.js'
   ], 'client');
 
+  /*
   // Ace editor for the client
   var aceJS = 'ace-builds/src/ace.js';
   api.addFiles(aceJS, 'client', { bare: true });
@@ -78,12 +93,12 @@ Package.onUse(function (api) {
   // Add Ace files as assets that can be loaded by the client later
   var aceSettings = getFilesFromFolder("mizzao:sharejs", "ace-builds/src");
   api.addFiles(_.without(aceSettings, aceJS), 'client', {isAsset: true});
+  */
 
   // CM editor for the client
   api.addFiles([
     'codemirror/lib/codemirror.js',
     'codemirror/lib/codemirror.css',
-    'codemirror/theme/monokai.css',
     'codemirror/addon/fold/foldgutter.css',
     'codemirror/addon/fold/foldcode.js',
     'codemirror/addon/fold/foldgutter.js',
@@ -96,7 +111,7 @@ Package.onUse(function (api) {
 
   // Add the ShareJS connectors
   // TODO: a really smart package would not push both of these to the client depending on use case
-  api.addFiles('.npm/package/node_modules/share/webclient/ace.js', 'client');
+  //api.addFiles('.npm/package/node_modules/share/webclient/ace.js', 'client');
   api.addFiles('.npm/package/node_modules/share/webclient/textarea.js', 'client');
   api.addFiles('.npm/package/node_modules/share/webclient/cm.js', 'client');
 
